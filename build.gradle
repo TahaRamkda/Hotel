@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.houari'
+version = '1.0-SNAPSHOT'
+
+sourceCompatibility = '11'
+targetCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Jackson YAML library
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+
+    // JUnit Jupiter for parameterized tests
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+}
+
+test {
+    useJUnitPlatform()
+}
