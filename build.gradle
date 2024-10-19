@@ -1,25 +1,38 @@
 plugins {
-    id 'java'
+    id 'java' // For Java projects
+    id 'jacoco' // For code coverage using JaCoCo
+    id 'org.sonarqube' version '5.1.0.4882' // SonarQube plugin
 }
 
-group = 'com.houari'
+group = 'your.group.id' // Replace with your project group ID
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = '11'
-targetCompatibility = '11'
-
 repositories {
-    mavenCentral()
+    // Use the Gradle Plugin Portal to resolve dependencies
+    gradlePluginPortal() // For Gradle plugins, including SonarQube
 }
 
 dependencies {
-    // Jackson YAML library
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
-
-    // JUnit Jupiter for parameterized tests
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+    // JUnit 5 for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform() // Configuring the tests to use JUnit 5 platform
+}
+
+jacocoTestReport {
+    dependsOn test // Ensure the tests are run before generating the report
+    reports {
+        xml.required = true
+        html.required = true // HTML report will be generated in buildDir/reports/jacoco/html
+    }
+}
+sonarqube {
+    properties {
+        property "sonar.projectKey", "your_project_key" // Replace with your project key
+        property "sonar.host.url", "http://localhost:9000" // SonarQube server URL
+        property "sonar.login", "your_sonar_token" // Optional: If your SonarQube requires authentication
+    }
 }
