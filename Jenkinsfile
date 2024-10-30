@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        // Add any environment variables here if needed
     }
 
     stages {
@@ -18,6 +19,7 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         always {
@@ -32,5 +34,4 @@ pipeline {
             echo "Build succeeded!"
         }
     }
-}
 }
