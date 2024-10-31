@@ -5,7 +5,6 @@ pipeline {
         AWS_REGION = 'us-east-1'
         ECR_REPO_URI = '767397679048.dkr.ecr.us-east-1.amazonaws.com/hotelmanagement/autops'
         IMAGE_NAME = 'hotelmanagement/autops:latest'
-        RESULTS_FILE = 'results.json'
     }
 
     stages {
@@ -36,14 +35,10 @@ pipeline {
         stage('Trivy Security Scan') {
             steps {
             script {
-                sh "trivy image --output ${RESULTS_FILE} --format json ${IMAGE_NAME}"
-                    script {
-                        def scanResults = readJSON file: "${RESULTS_FILE}"
-                        def criticalVulnerabilities = scanResults.Vulnerabilities.findAll { it.Severity == 'CRITICAL' }
-                        
-                        if (criticalVulnerabilities.size() > 0) {
-                            error "Scan found critical vulnerabilities: ${criticalVulnerabilities}"
-                        }
+               def scanResult = sh(script: "trivy image --quiet --severity CRITICAL,HIGH ${IMAGE_NAME}", returnStatus: true)
+
+                    if (scanResult != 0) {
+                        error "Scan found critical or high vulnerabilities."
                     }
                 }
             }
