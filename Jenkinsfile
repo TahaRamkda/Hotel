@@ -39,7 +39,7 @@ pipeline {
                         docker run --rm \
                           -v /var/run/docker.sock:/var/run/docker.sock \
                           aquasec/trivy:latest image \
-                          --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+                          --cache-dir /path/to/cache --db-repository ghcr.io/aquasecurity/trivy-db:2 \
                           --severity HIGH,CRITICAL \
                           --output results.json \
                           --format json \
