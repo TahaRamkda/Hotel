@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_REPO_URI = '767397679048.dkr.ecr.us-east-1.amazonaws.com/hotelmanagement/autops'
+        IMAGE_NAME = 'hotelmanagement/autops:latest'
+    }
+    
     stages {
         //01
         stage('Clone Repository') {
