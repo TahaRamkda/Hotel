@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     stages {
+        //01
         stage('Clone Repository') {
             steps {
                 echo 'Cloning the repository...'
                 git branch: 'main', url: 'https://github.com/TahaRamkda/Hotel.git'
             }
         }
+        //02
         stage('Gradle Build and Test') {
             steps {
                 script {
@@ -15,16 +17,15 @@ pipeline {
                 }
             }
         }
-    }
-
-    stage('Build Docker Image') {
+        //03
+        stage('Build Docker Image') {
             steps {
                 script {
                     sh 'docker build -t $IMAGE_NAME .'
                 }
             }
         }
-        
+        //04
         stage('Push to ECR') {
             steps {
                 withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws_credentials')]) {
@@ -39,6 +40,7 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         always {
