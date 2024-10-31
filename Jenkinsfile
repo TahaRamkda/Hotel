@@ -43,7 +43,7 @@ pipeline {
                           --severity HIGH,CRITICAL \
                           --output results.json \
                           --format json \
-                          ${IMAGE_NAME}:tag
+                          ${IMAGE_NAME}:latest
                     '''
                 }
             }
