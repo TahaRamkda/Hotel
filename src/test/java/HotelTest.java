@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HotelTest {
     @Test
     public void testInvalidRoomNumber() {
-        // Trying to deallocate a room that doesn't exist
         Exception exception = assertThrows(IndexOutOfBoundsException.class, () -> {
             Hotel.deallocate(100, 1); // Invalid room number
         });
