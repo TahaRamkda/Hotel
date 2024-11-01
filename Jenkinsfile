@@ -34,11 +34,20 @@ pipeline {
             }
         }
         //04
+        stage('Prepare Trivy Cache') {
+            steps {
+                script {
+                    // Create the cache directory if it doesn't exist
+                    sh "mkdir -p ${TRIVY_CACHE_DIR}"
+                }
+            }
+        }
+        //05
         stage('Download Trivy DB') {
             steps {
                 withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-credentials')]) {
                     script {
-                        // Download Trivy DB from S3, if it exists, or pull the latest
+                        // Download Trivy DB from S3, if it exists
                         sh "aws s3 cp s3://${S3_BUCKET}/trivy/trivy.db ${TRIVY_CACHE_DIR}/trivy.db || true"
                         // Ensure the local Trivy DB is up-to-date
                         sh "trivy db pull || true"
@@ -46,28 +55,35 @@ pipeline {
                 }
             }
         }
-        //05
+        //06
         stage('Trivy Security Scan') {
             steps {
                 script {
+                    // Run the Trivy scan
                     sh "trivy image --quiet --severity CRITICAL,HIGH --cache-dir ${TRIVY_CACHE_DIR} --format json -o results.json ${IMAGE_NAME}"
+                    
+                    // Read and process scan results
                     def scanResults = readJSON file: 'results.json'
                     def criticalOrHighVulnerabilities = scanResults.Vulnerabilities.findAll { it.Severity in ['CRITICAL', 'HIGH'] }
+                    
                     if (criticalOrHighVulnerabilities.size() > 0) {
                         echo "Critical or high vulnerabilities found: ${criticalOrHighVulnerabilities}"
                         error "Scan found critical/high vulnerabilities: ${criticalOrHighVulnerabilities}"
                     } else {
                         echo "No critical or high vulnerabilities found."
                     }
+                    
+                    // Upload the Trivy database back to S3
                     sh "aws s3 cp ${TRIVY_CACHE_DIR}/trivy.db s3://${S3_BUCKET}/trivy/trivy.db"
                 }
             }
         }
-        //06
+        //07
         stage('Push to ECR') {
             steps {
                 withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-credentials')]) {
                     script {
+                        // Log in to ECR
                         sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI'
                         sh 'docker tag $IMAGE_NAME $ECR_REPO_URI:latest'
                         sh 'docker push $ECR_REPO_URI:latest'
