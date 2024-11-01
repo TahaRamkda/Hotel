@@ -35,23 +35,33 @@ pipeline {
         }
         //04
         stage('Trivy Security Scan') {
-                    steps {
-                    withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-credentials')]) {
-                    script {
-                        sh "trivy image --quiet --severity CRITICAL,HIGH --cache-dir ${TRIVY_CACHE_DIR} --format json -o results.json ${IMAGE_NAME}"
-                        def scanResults = readJSON file: 'results.json'
-                        def criticalOrHighVulnerabilities = scanResults.Vulnerabilities.findAll { it.Severity in ['CRITICAL', 'HIGH'] }
-                        if (criticalOrHighVulnerabilities.size() > 0) {
-                            echo "Critical or high vulnerabilities found: ${criticalOrHighVulnerabilities}"
-                            error "Scan found critical/high vulnerabilities: ${criticalOrHighVulnerabilities}"
-                        } else {
-                            echo "No critical or high vulnerabilities found."
-                        }
-                        sh "aws s3 cp ${TRIVY_CACHE_DIR}/trivy.db s3://${S3_BUCKET}/trivy/trivy.db"
+    steps {
+        withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-credentials')]) {
+            script {
+                // Download Trivy DB from S3
+                sh "aws s3 cp s3://${S3_BUCKET}/trivy/trivy.db ${TRIVY_CACHE_DIR}/trivy.db || true"
+
+                // Run Trivy scan
+                def scanResult = sh(script: "trivy image --quiet --severity CRITICAL,HIGH --cache-dir ${TRIVY_CACHE_DIR} --format json -o results.json ${IMAGE_NAME}", returnStatus: true)
+                
+                if (scanResult != 0) {
+                    def scanResults = readJSON file: 'results.json'
+                    def criticalOrHighVulnerabilities = scanResults.Vulnerabilities.findAll { it.Severity in ['CRITICAL', 'HIGH'] }
+                    if (criticalOrHighVulnerabilities.size() > 0) {
+                        echo "Critical or high vulnerabilities found: ${criticalOrHighVulnerabilities}"
+                        error "Scan found critical/high vulnerabilities: ${criticalOrHighVulnerabilities}"
+                    } else {
+                        echo "No critical or high vulnerabilities found."
                     }
                 }
+                
+                // Update Trivy DB in S3 for future use
+                sh "aws s3 cp ${TRIVY_CACHE_DIR}/trivy.db s3://${S3_BUCKET}/trivy/trivy.db"
             }
         }
+    }
+}
+
         //05
         stage('Push to ECR') {
             steps {
