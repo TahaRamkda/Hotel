@@ -44,7 +44,8 @@ pipeline {
 
         stage('Download Trivy DB') {
             steps {
-                script {
+                    withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', credentialsId: 'aws-credentials')]) {
+                    script {
                     try {
                         echo 'Downloading Trivy DB...'
                         sh 'aws s3 cp s3://cachefortrivy/trivy/trivy.db /var/cache/trivy/trivy.db'
@@ -53,7 +54,8 @@ pipeline {
                     }
 
                     // Attempt to pull the Trivy DB if the previous step failed
-                    sh 'trivy db pull || echo "Failed to pull Trivy DB, using local cache."'
+                    sh 'trivy db pull || echo "Failed to pull Trivy DB, using local cache."' 
+                    }
                 }
             }
         }
@@ -87,6 +89,9 @@ pipeline {
     post {
         always {
             junit 'build/test-results/test/*.xml'
+            archiveArtifacts artifacts: '**/results.json', allowEmptyArchive: true
+            echo 'Finished: ${currentBuild.currentResult}'
         }
     }
 }
+
