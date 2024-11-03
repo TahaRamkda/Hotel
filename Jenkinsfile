@@ -54,7 +54,7 @@ pipeline {
                     }
 
                     // Attempt to pull the Trivy DB if the previous step failed
-                    sh 'trivy db pull || echo "Failed to pull Trivy DB, using local cache."' 
+                    sh 'trivy --download-db-only || echo "Failed to pull Trivy DB, using local cache."' 
                     }
                 }
             }
